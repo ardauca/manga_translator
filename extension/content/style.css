@@ -1,0 +1,14 @@
+/* Content script styles */
+
+.manga-selection-box {
+  /* Created dynamically in content.js */
+}
+
+.manga-overlay {
+  /* Created dynamically in content.js */
+}
+
+/* Prevent selection issues */
+.manga-selection-active * {
+  user-select: none;
+}
