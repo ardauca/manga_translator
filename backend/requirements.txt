@@ -3,8 +3,12 @@ uvicorn[standard]==0.24.0
 python-multipart==0.0.6
 opencv-python>=4.6.0,<4.7.0
 paddleocr>=2.7.0
+<<<<<<< HEAD
 paddlepaddle>=2.5.0
 pydantic-settings>=2.0.0
 deep-translator>=1.11.4
+=======
+googletrans==4.0.0rc1
+>>>>>>> origin/main
 pillow>=10.2.0
 numpy>=1.24.3

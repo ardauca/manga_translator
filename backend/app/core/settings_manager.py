@@ -1,8 +1,12 @@
 # app/core/settings_manager.py - Ayarlar
 
 from pydantic_settings import BaseSettings
+<<<<<<< HEAD
 from pydantic import Field
 from typing import Optional, List
+=======
+from typing import Optional
+>>>>>>> origin/main
 
 class Settings(BaseSettings):
     """Backend ayarları"""
@@ -13,9 +17,16 @@ class Settings(BaseSettings):
     
     # OCR
     OCR_ENGINE: str = "paddleocr"
+<<<<<<< HEAD
     
     # Translator
     TRANSLATOR_ENGINE: str = "deep-translator"
+=======
+    USE_GPU: bool = False
+    
+    # Translator
+    TRANSLATOR_ENGINE: str = "googletrans"
+>>>>>>> origin/main
     DEFAULT_TARGET_LANG: str = "tr"
     
     # Cache
@@ -28,7 +39,11 @@ class Settings(BaseSettings):
     ENABLE_SHARPEN: bool = False
     
     # CORS
+<<<<<<< HEAD
     ALLOWED_ORIGINS: List[str] = ["*"]
+=======
+    ALLOWED_ORIGINS: list = ["*"]
+>>>>>>> origin/main
     
     class Config:
         env_file = ".env"

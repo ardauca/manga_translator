@@ -14,6 +14,7 @@ class OCREngine:
     def __init__(self):
         # PaddleOCR multi-dil desteği ile başlat
         # JP: Japonca, EN: İngilizce
+<<<<<<< HEAD
         try:
             self.ocr = PaddleOCR(
                 use_angle_cls=True,  # Orientation detection
@@ -23,6 +24,14 @@ class OCREngine:
         except Exception as e:
             logger.error(f"OCREngine başlatma hatası: {e}")
             self.ocr = None
+=======
+        self.ocr = PaddleOCR(
+            use_angle_cls=True,  # Orientation detection
+            use_gpu=False,  # CPU mode
+            lang='japan'  # Default Japonca
+        )
+        logger.info("OCREngine initialized with PaddleOCR")
+>>>>>>> origin/main
     
     def extract_text(self, image: Image.Image, source_lang: str = 'auto') -> str:
         """
@@ -36,6 +45,7 @@ class OCREngine:
             Çıkarılan metin
         """
         try:
+<<<<<<< HEAD
             if self.ocr is None:
                 logger.error("OCR engine başlatılmadı")
                 return ""
@@ -43,6 +53,21 @@ class OCREngine:
             # PIL Image'ı numpy array'e çevir
             img_array = np.array(image)
             
+=======
+            # PIL Image'ı numpy array'e çevir
+            img_array = np.array(image)
+            
+            # Dil belirleme
+            if source_lang == 'auto':
+                lang = 'japan'  # Default olarak Japoncayı dene
+            elif source_lang == 'en':
+                lang = 'en'
+            elif source_lang == 'ja':
+                lang = 'japan'
+            else:
+                lang = 'japan'
+            
+>>>>>>> origin/main
             # OCR yap
             result = self.ocr.ocr(img_array, cls=True)
             
@@ -60,7 +85,11 @@ class OCREngine:
             return ' '.join(text_lines).strip()
         
         except Exception as e:
+<<<<<<< HEAD
             logger.error(f"OCR çıkarma hatası: {e}")
+=======
+            logger.error(f"OCR extraction error: {e}")
+>>>>>>> origin/main
             return ""
     
     def extract_with_confidence(self, image: Image.Image, source_lang: str = 'auto') -> dict:
@@ -68,6 +97,7 @@ class OCREngine:
         Metin ve confidence bilgisi ile çıkart
         """
         try:
+<<<<<<< HEAD
             if self.ocr is None:
                 return {
                     'text': '',
@@ -75,6 +105,8 @@ class OCREngine:
                     'raw_results': None
                 }
             
+=======
+>>>>>>> origin/main
             img_array = np.array(image)
             result = self.ocr.ocr(img_array, cls=True)
             
@@ -97,7 +129,11 @@ class OCREngine:
             }
         
         except Exception as e:
+<<<<<<< HEAD
             logger.error(f"OCR çıkarma hatası: {e}")
+=======
+            logger.error(f"OCR extraction error: {e}")
+>>>>>>> origin/main
             return {
                 'text': '',
                 'confidence': 0,
