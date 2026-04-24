@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manga Translator</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Manga Translator</h1>
+    
+    <div class="control-panel">
+      <button id="startSelectionBtn" class="btn btn-primary">
+        <span class="icon">📍</span>
+        Seçim Modunu Başlat
+      </button>
+      
+      <button id="stopSelectionBtn" class="btn btn-secondary" disabled>
+        <span class="icon">✕</span>
+        İptal Et
+      </button>
+    </div>
+
+    <div class="settings-section">
+      <h3>Ayarlar (V1)</h3>
+      <div class="setting-item">
+        <label>Kaynak Dil:</label>
+        <select id="sourceLang">
+          <option value="ja">Japonca (JP)</option>
+          <option value="en">İngilizce (EN)</option>
+          <option value="auto">Otomatik</option>
+        </select>
+      </div>
+
+      <div class="setting-item">
+        <label>Yazı Boyutu:</label>
+        <input type="range" id="fontSize" min="12" max="24" value="14">
+        <span id="fontSizeValue">14px</span>
+      </div>
+
+      <div class="setting-item">
+        <label>Opaklık:</label>
+        <input type="range" id="opacity" min="0.3" max="1" step="0.1" value="0.95">
+        <span id="opacityValue">95%</span>
+      </div>
+    </div>
+
+    <div class="status">
+      <p id="statusText">Hazır</p>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
