@@ -63,8 +63,8 @@ class ImageProcessor:
             kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
             processed = cv2.morphologyEx(thresholded, cv2.MORPH_CLOSE, kernel)
             
-            # OpenCV'den PIL'e geri çevir
-            result = Image.fromarray(cv2.cvtColor(processed, cv2.COLOR_BGR2RGB))
+            # OpenCV'den PIL'e geri çevir (grayscale -> RGB)
+            result = Image.fromarray(cv2.cvtColor(processed, cv2.COLOR_GRAY2RGB))
             
             logger.debug(f"Image preprocessed: {image.size} -> {result.size}")
             return result
@@ -82,7 +82,7 @@ class ImageProcessor:
         # Histogram equalization
         equalized = cv2.equalizeHist(gray)
         
-        return Image.fromarray(cv2.cvtColor(equalized, cv2.COLOR_BGR2RGB))
+        return Image.fromarray(cv2.cvtColor(equalized, cv2.COLOR_GRAY2RGB))
     
     @staticmethod
     def denoise(image: Image.Image) -> Image.Image:

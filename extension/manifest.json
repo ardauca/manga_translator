@@ -23,7 +23,9 @@
     {
       "matches": ["<all_urls>"],
       "js": ["content/content.js"],
-      "css": ["content/style.css"]
+      "css": ["content/style.css"],
+      "run_at": "document_end",
+      "all_frames": false
     }
   ]
 }

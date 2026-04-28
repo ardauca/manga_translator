@@ -42,12 +42,16 @@ class PopupController {
         return;
       }
 
+      console.log('[Manga Translator] Popup: Content script\'e START_SELECTION gönderiliyor');
+      
       chrome.tabs.sendMessage(tabs[0].id, { action: 'START_SELECTION' }, (response) => {
         if (chrome.runtime.lastError) {
-          this.updateStatus('İçerik script yüklenmedi', 'error');
+          console.error('[Manga Translator] Popup: Error -', chrome.runtime.lastError.message);
+          this.updateStatus('İçerik script yüklenmedi - Sayfayı yenile', 'error');
           return;
         }
         
+        console.log('[Manga Translator] Popup: Response alındı -', response);
         this.isSelecting = true;
         this.updateUI();
         this.updateStatus('Seçim modu aktif - Balonları seç');
