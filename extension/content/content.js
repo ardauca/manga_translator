@@ -152,12 +152,16 @@ class SelectionManager {
           height: this.selectedArea.height
         };
         
-        console.log('[Manga Translator] Sending to background:', { cleanCoordinates, sourceLang });
+        // Zoom level'ı al
+        const zoomLevel = window.devicePixelRatio || 1.0;
+        
+        console.log('[Manga Translator] Sending to background:', { cleanCoordinates, sourceLang, zoomLevel });
         
         chrome.runtime.sendMessage({
           action: 'CAPTURE_AND_PROCESS',
           coordinates: cleanCoordinates,
-          sourceLang: sourceLang
+          sourceLang: sourceLang,
+          zoomLevel: zoomLevel
         }, (response) => {
           console.log('[Manga Translator] Content: Response alındı:', response);
           

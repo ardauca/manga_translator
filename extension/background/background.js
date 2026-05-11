@@ -9,17 +9,18 @@ class BackgroundWorker {
   initMessageHandlers() {
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (request.action === 'CAPTURE_AND_PROCESS') {
-        this.captureAndProcess(request.coordinates, request.sourceLang, sendResponse);
+        this.captureAndProcess(request.coordinates, request.sourceLang, request.zoomLevel, sendResponse);
         return true; // Async response
       }
     });
   }
 
-  async captureAndProcess(coordinates, sourceLang, sendResponse) {
+  async captureAndProcess(coordinates, sourceLang, zoomLevel, sendResponse) {
     try {
       console.log('[Manga Translator] ===== CAPTURE START =====');
       console.log('[Manga Translator] Coordinates:', coordinates);
       console.log('[Manga Translator] Source Lang:', sourceLang);
+      console.log('[Manga Translator] Zoom Level:', zoomLevel);
       
       // Tab'ın ekran görüntüsünü al (data URL format)
       console.log('[Manga Translator] Capturing visible tab...');
@@ -34,7 +35,8 @@ class BackgroundWorker {
         screenshot_data: base64Data,
         coordinates: coordinates,
         source_lang: sourceLang || 'auto',
-        target_lang: 'tr'
+        target_lang: 'tr',
+        zoom_level: zoomLevel || 1.0
       };
       
       console.log('[Manga Translator] Sending to backend...');
