@@ -1,45 +1,52 @@
 # Architecture
 
-## Overview
+## Model
+
+Proje local companion backend modeliyle çalışır. Chrome extension kullanıcı etkileşimini yönetir; ağır OCR ve çeviri işi lokal FastAPI backend'e gider.
 
 ```text
-Chrome content script
-  -> user selects a bubble
-Chrome background service worker
-  -> captures the visible tab
+Content script
+  -> kullanıcı balonu seçer
+Background service worker
+  -> visible tab screenshot alır
 FastAPI backend
-  -> crops, preprocesses, OCRs, translates, caches
-Chrome content script
-  -> renders translated overlay on the page
+  -> crop, preprocess, OCR, translate, cache
+Content script
+  -> çeviri overlay'i basar
 ```
 
-## Chrome Extension
+## Extension
 
-- `popup/` controls selection mode and user settings.
-- `content/content.js` runs on manga pages, draws the selection box, and renders overlays.
-- `background/background.js` captures screenshots and calls the backend.
-- Settings are stored with `chrome.storage.sync`; transient selection state uses `chrome.storage.local`.
+- `popup/`: seçim başlatma, ayarlar ve backend URL girişi
+- `content/content.js`: seçim kutusu, hata bildirimi ve çeviri overlay'i
+- `background/background.js`: screenshot alma, backend health check, `/api/process` çağrısı
+- `manifest.json`: Chrome Manifest V3 tanımı
+
+Önemli not: Extension yalnızca `extension/` klasöründen yüklenmelidir. Proje kökü yüklenirse `.venv` gibi klasörler de Chrome tarafından paket parçası gibi taranır.
 
 ## Backend
 
-- `main.py` creates the FastAPI app.
-- `api/routes.py` owns request validation, screenshot decoding, crop bounds, cache use, OCR, and translation orchestration.
-- `core/image_processor.py` contains OpenCV preprocessing.
-- `core/ocr_engine.py` wraps PaddleOCR lazy loading.
-- `core/translator.py` wraps `deep-translator`.
-- `core/cache_manager.py` provides in-memory TTL cache.
+- `main.py`: FastAPI uygulaması ve CORS
+- `api/routes.py`: request doğrulama, screenshot decode, crop, cache, OCR, translate
+- `core/image_processor.py`: OpenCV preprocessing
+- `core/ocr_engine.py`: PaddleOCR model yönetimi ve sonuç parse etme
+- `core/translator.py`: `deep-translator` entegrasyonu
+- `core/cache_manager.py`: TTL destekli bellek içi cache
+- `core/settings_manager.py`: environment tabanlı ayarlar
 
-## Data Flow
+## Veri Akışı
 
-1. The content script sends viewport coordinates to the background worker.
-2. The background worker captures the visible tab and sends the base64 PNG to `/api/process`.
-3. The backend scales coordinates by `zoom_level`, clamps the crop to the screenshot bounds, and checks the cache.
-4. If there is no cache hit, the backend preprocesses the crop, runs OCR, translates the result, and stores it in cache.
-5. The extension receives the translation and places an absolute-positioned overlay on the page.
+1. Content script viewport koordinatlarını background worker'a yollar.
+2. Background worker backend `/health` kontrolü yapar.
+3. Backend uygunsa visible tab screenshot alınır.
+4. Screenshot ve koordinatlar `/api/process` endpoint'ine gider.
+5. Backend koordinatları zoom seviyesine göre ölçekler ve screenshot sınırlarına kırpar.
+6. Cache hit varsa direkt sonuç döner.
+7. Cache miss varsa OpenCV preprocessing, PaddleOCR ve çeviri çalışır.
+8. Sonuç cache'e yazılır ve extension overlay gösterir.
 
-## Known Tradeoffs
+## Tradeofflar
 
-- The backend is local and assumes `http://localhost:8000` by default.
-- The cache is in memory and disappears when the backend restarts.
-- PaddleOCR has a heavy first-run cost because models may need to download and initialize.
-- Manual selection is simpler and more predictable than automatic bubble detection for this MVP.
+- Lokal backend gizlilik ve maliyet açısından iyi, kurulum açısından ek adım gerektirir.
+- Hosted backend kullanıcı deneyimini kolaylaştırır ama sunucu maliyeti ve gizlilik sorumluluğu doğurur.
+- Tarayıcı içinde OCR şu an bu proje için pratik değildir; model boyutu ve performans sorunları yüksek olur.

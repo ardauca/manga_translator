@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from core.cache_manager import CacheManager
 from core.image_processor import ImageProcessor
 from core.ocr_engine import OCREngine
+from core.settings_manager import settings
 from core.translator import Translator
 
 logger = logging.getLogger(__name__)
@@ -47,7 +48,7 @@ class ProcessResponse(BaseModel):
 ocr_engine = OCREngine()
 translator = Translator()
 image_processor = ImageProcessor()
-cache_manager = CacheManager()
+cache_manager = CacheManager(max_size=settings.CACHE_MAX_SIZE, ttl_hours=settings.CACHE_TTL_HOURS)
 
 
 def _decode_screenshot(screenshot_data: str) -> Image.Image:
@@ -121,7 +122,7 @@ async def process_manga(request: ProcessRequest):
                 confidence=float(cached.get("confidence", 1.0)),
             )
 
-        processed_image = image_processor.preprocess(cropped_image)
+        processed_image = image_processor.preprocess(cropped_image, upscale_factor=settings.UPSCALE_FACTOR)
         ocr_result = ocr_engine.extract_with_confidence(processed_image, request.source_lang)
         original_text = ocr_result.get("text", "")
         confidence = float(ocr_result.get("confidence") or 0.0)
@@ -129,7 +130,7 @@ async def process_manga(request: ProcessRequest):
         if not original_text.strip():
             return ProcessResponse(
                 success=True,
-                translation="(Metin bulunamadi)",
+                translation="(Metin bulunamadı)",
                 original_text="",
                 confidence=0.0,
             )

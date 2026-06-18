@@ -1,43 +1,47 @@
 # Roadmap
 
-## V0.5 - MVP Stabilization
+## V0.5 - Çalışan MVP
 
-- [x] Manual selection in the browser
-- [x] Visible tab screenshot capture
-- [x] Backend crop and preprocessing
-- [x] PaddleOCR integration
-- [x] Translation integration
-- [x] Overlay rendering
-- [x] In-memory cache on `/api/process`
-- [ ] Backend unit tests with mocked OCR and translator
-- [ ] OCR quality tuning on a small sample set
+- [x] Chrome Manifest V3 extension
+- [x] Manuel balon seçimi
+- [x] Görünür sekmeden screenshot alma
+- [x] Backend crop ve koordinat doğrulama
+- [x] OpenCV preprocessing
+- [x] PaddleOCR lazy loading
+- [x] Japonca/İngilizce kaynak dil seçimi
+- [x] Türkçe çeviri
+- [x] Sayfa üstü overlay
+- [x] Bellek içi cache
+- [x] Backend bağlantı kontrolü ve fallback URL
+- [x] Temiz repo yapısı ve `.gitignore`
 
-## V1 - Usability
+## V0.6 - Paylaşılabilir Beta
 
-- [ ] Multiple overlays without clearing the previous one by default
-- [ ] Retry button on failed translations
-- [ ] Translation history
-- [ ] Copy to clipboard
-- [ ] Better long-text fitting inside selected bubbles
-- [ ] Optional backend URL health check from the popup
+- [ ] Backend health durumunu popup'ta göster
+- [ ] PyInstaller/Nuitka ile Windows backend paketi hazırla
+- [ ] Extension + backend beta zip yapısı oluştur
+- [ ] Basit backend smoke testleri ekle
+- [ ] OCR debug görseli alma opsiyonunu ayara bağla
 
-## V2 - Quality and Speed
+## V1 - Kullanılabilirlik
 
-- [ ] Benchmark preprocessing strategies
-- [ ] Add performance metrics for OCR and translation
-- [ ] Persist cache between backend restarts
-- [ ] Optional GPU configuration guide
-- [ ] More robust language handling
+- [ ] Birden fazla overlay'i aynı sayfada tutma
+- [ ] Overlay silme ve yeniden deneme kontrolleri
+- [ ] Çeviri geçmişi
+- [ ] Panoya kopyalama
+- [ ] Uzun metinlerde daha iyi yazı sığdırma
 
-## V3 - Automation
+## V2 - Kalite ve Performans
 
-- [ ] Automatic bubble detection
-- [ ] Batch processing
-- [ ] Typesetting improvements
-- [ ] Offline translation exploration
+- [ ] OCR sample seti ile preprocessing kıyaslama
+- [ ] Kalıcı cache
+- [ ] İşlem süresi metrikleri
+- [ ] GPU kullanım rehberi
+- [ ] Alternatif çeviri sağlayıcısı fallback'i
 
-## Out of Scope for Now
+## V3 - Otomasyon
 
-- Chrome mobile support
-- Paid translation APIs
-- Multi-user backend deployment
+- [ ] Otomatik balon algılama
+- [ ] Batch çeviri
+- [ ] Daha iyi typesetting
+- [ ] Offline çeviri modeli araştırması

@@ -1,21 +1,21 @@
 # Setup
 
-## Requirements
+## Gereksinimler
 
 - Windows
 - Python 3.10
 - Google Chrome
-- Enough disk space for PaddleOCR model downloads
+- PaddleOCR modelleri için yeterli disk alanı
 
 ## Backend
 
-Use the helper script:
+Önerilen yol:
 
 ```powershell
 .\start_backend.ps1
 ```
 
-Or install manually:
+Manuel kurulum:
 
 ```powershell
 py -3.10 -m venv .venv
@@ -26,7 +26,7 @@ cd backend
 python app\main.py
 ```
 
-Health check:
+Kontrol:
 
 ```powershell
 Invoke-RestMethod http://localhost:8000/health
@@ -34,14 +34,15 @@ Invoke-RestMethod http://localhost:8000/health
 
 ## Chrome Extension
 
-1. Go to `chrome://extensions/`.
-2. Enable Developer mode.
-3. Click Load unpacked.
-4. Pick the `extension/` directory. Do not pick the project root.
-5. Open the popup and confirm Backend URL is `http://localhost:8000`.
+1. `chrome://extensions/` adresini aç.
+2. Developer mode'u etkinleştir.
+3. Load unpacked seç.
+4. Sadece `extension/` klasörünü seç. Proje kökünü seçme.
+5. Popup'ta Backend URL değerini `http://localhost:8000` olarak bırak.
 
-## Common Issues
+## Sık Karşılaşılan Durumlar
 
-- First OCR run is slow because PaddleOCR may download and initialize models.
-- If the popup says the content script is not loaded, refresh the manga page after installing or reloading the extension.
-- If translation fails, verify the backend terminal for errors and check that the machine has internet access.
+- `Failed to fetch`: Backend kapalıdır veya port 8000 erişilemiyordur.
+- `ssl_key.pem` uyarısı: Proje kökü uzantı olarak yüklenmiştir. Uzantıyı kaldırıp `extension/` klasöründen yükle.
+- İlk OCR yavaş: PaddleOCR ilk kullanımda model indirir ve yükler.
+- Content script hatası: Eklentiyi reload edip manga sayfasını yenile.

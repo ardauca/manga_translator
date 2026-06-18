@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Manga Translator",
   "version": "0.5.0",
-  "description": "Ücretsiz, lokal manga çevirisi - Japonca ve İngilizceden Türkçeye",
+  "description": "Local manga translation helper for Japanese and English to Turkish",
   "permissions": [
     "activeTab",
     "scripting",

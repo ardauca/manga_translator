@@ -1,22 +1,35 @@
 # Manga Translator
 
-Chrome extension + local Python backend for translating selected manga speech bubbles into Turkish.
+Manga balonlarını Chrome üzerinde seçip Türkçeye çeviren lokal OCR destekli eklenti.
 
-The current target is a reliable MVP: the user manually selects a bubble, the extension captures the visible tab, the backend crops the selection, runs OCR, translates the text, and renders the Turkish result back on the page.
+Proje iki parçadan oluşur:
 
-## Features
+- Chrome extension: balon seçimi, ekran görüntüsü alma, overlay gösterimi
+- Python backend: crop, OpenCV preprocessing, PaddleOCR, çeviri ve cache
 
-- Manual speech bubble selection with mouse drag
-- Chrome Manifest V3 extension
-- `chrome.tabs.captureVisibleTab()` screenshot capture
-- FastAPI backend
-- OpenCV preprocessing
-- PaddleOCR for local OCR
-- `deep-translator` Google backend for translation
-- In-memory hash cache for repeated selections
-- Page overlay for translated text
+## Yetenekler
 
-## Project Structure
+- Mouse ile manuel konuşma balonu seçimi
+- Chrome Manifest V3 eklentisi
+- Görünür sekmeden screenshot alma
+- Seçilen alanı backend tarafında kırpma
+- OpenCV ile OCR öncesi görüntü iyileştirme
+- PaddleOCR ile lokal Japonca/İngilizce OCR
+- `deep-translator` ile Türkçeye çeviri
+- Aynı seçimler için bellek içi cache
+- Sayfa üzerinde çeviri overlay'i
+- Popup üzerinden kaynak dil, yazı boyutu, opaklık ve backend URL ayarı
+- Backend bağlantısı yoksa anlaşılır hata mesajı
+
+## Sınırlar
+
+- Backend lokal çalışmalıdır; eklenti tek başına OCR yapmaz.
+- İlk OCR denemesi yavaş olabilir çünkü PaddleOCR model indirip başlatır.
+- Cache bellek içindedir; backend kapanınca sıfırlanır.
+- Otomatik balon algılama henüz yoktur.
+- Uzantı olarak proje kökü değil, yalnızca `extension/` klasörü yüklenmelidir.
+
+## Proje Yapısı
 
 ```text
 manga_translator/
@@ -42,47 +55,40 @@ manga_translator/
   start_backend.bat
 ```
 
-## Quick Start
+## Kurulum
 
-### Backend
-
-PowerShell:
+Backend'i başlat:
 
 ```powershell
 .\start_backend.ps1
 ```
 
-Command Prompt:
+Script `.venv` oluşturur, bağımlılıkları kurar ve backend'i `http://localhost:8000` adresinde başlatır.
 
-```bat
-start_backend.bat
-```
-
-The scripts create `.venv`, install backend dependencies, and start the server at `http://localhost:8000`.
-
-Manual setup:
+Backend sağlık kontrolü:
 
 ```powershell
-py -3.10 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r backend\requirements.txt
-cd backend
-python app\main.py
+Invoke-RestMethod http://localhost:8000/health
 ```
 
-### Extension
+Chrome eklentisini yükle:
 
-1. Open `chrome://extensions/`.
-2. Enable Developer mode.
-3. Click Load unpacked.
-4. Select only the `extension/` folder, not the project root.
-5. Make sure the popup Backend URL is `http://localhost:8000`.
+1. `chrome://extensions/` sayfasını aç.
+2. Developer mode'u aç.
+3. Load unpacked seç.
+4. Sadece `C:\Users\ARDA\Desktop\Python\manga_translator\extension` klasörünü seç.
+5. Manga sayfasını yenile.
+
+## Kullanım
+
+1. Backend terminalini açık bırak.
+2. Eklenti popup'ından seçimi başlat.
+3. Manga balonunu mouse ile seç.
+4. Çeviri sayfa üzerinde overlay olarak görünür.
 
 ## API
 
 ### `GET /health`
-
-Returns backend health:
 
 ```json
 {
@@ -92,8 +98,6 @@ Returns backend health:
 ```
 
 ### `POST /api/process`
-
-Request:
 
 ```json
 {
@@ -105,8 +109,6 @@ Request:
 }
 ```
 
-Response:
-
 ```json
 {
   "success": true,
@@ -116,6 +118,6 @@ Response:
 }
 ```
 
-## Current Status
+## Paylaşım Notu
 
-This is an MVP, not a packaged production extension yet. The main next tasks are improving OCR quality on varied manga panels, reducing first-run model download friction, adding tests around the backend pipeline, and polishing overlay behavior for long text.
+Bu proje şu an "local companion backend" modelindedir. Başka bir kullanıcıya vermek için extension yanında backend'i de çalıştırabilecekleri bir paket gerekir. Bir sonraki ürünleşme adımı backend'i tek tıkla çalışan Windows uygulamasına paketlemektir.

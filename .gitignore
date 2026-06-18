@@ -1,4 +1,4 @@
-# Python
+# Python bytecode and tool caches
 __pycache__/
 *.py[cod]
 *$py.class
@@ -11,14 +11,26 @@ __pycache__/
 venv/
 venv310/
 
-# Environment and local data
+# Local configuration
 .env
+.env.*
+
+# Logs and temporary debug artifacts
 *.log
 debug_bubble_*.png
+*.tmp
 
-# OCR models and generated data
+# OCR/model caches
 backend/app/core/models/
+.paddlex/
 
-# OS
+# Build outputs
+build/
+dist/
+*.spec
+
+# OS/editor noise
 .DS_Store
 Thumbs.db
+.vscode/
+.idea/
