@@ -1,157 +1,121 @@
-# Manga Çeviri Sistemi 📖➡️
+# Manga Translator
 
-**%100 Ücretsiz, Lokal OCR, Chrome Extension + Python Backend**
+Chrome extension + local Python backend for translating selected manga speech bubbles into Turkish.
 
-Japonca / İngilizce manga okurken konuşma balonlarını seçin ve doğrudan Türkçe olarak okuyun. Popup değil, **orijinal metni doğal şekilde Türkçeyle değiştir**.
+The current target is a reliable MVP: the user manually selects a bubble, the extension captures the visible tab, the backend crops the selection, runs OCR, translates the text, and renders the Turkish result back on the page.
 
-## 🎯 Hedef
+## Features
 
-```
-Kullanıcı Manga Okur
-    ↓
-Konuşma Balonunu Seçer
-    ↓
-Türkçe Çevirisi Görünür
-    ↓
-Sanki Manga Baştan Türkçeymiş Gibi Hisset
-```
+- Manual speech bubble selection with mouse drag
+- Chrome Manifest V3 extension
+- `chrome.tabs.captureVisibleTab()` screenshot capture
+- FastAPI backend
+- OpenCV preprocessing
+- PaddleOCR for local OCR
+- `deep-translator` Google backend for translation
+- In-memory hash cache for repeated selections
+- Page overlay for translated text
 
-## ✨ Özellikler (V0.5)
+## Project Structure
 
-- ✅ Manuel bubble seçimi (mouse drag)
-- ✅ `chrome.tabs.captureVisibleTab()` ile ekran görüntüsü
-- ✅ OpenCV preprocessing (upscale, grayscale, contrast, threshold)
-- ✅ **PaddleOCR** - Lokal, Japoncayı çok iyi okuyor
-- ✅ **GoogleTrans** - Ücretsiz, API key yok
-- ✅ DOM overlay (popup değil, doğrudan sayfada)
-- ✅ Scroll ile birlikte hareket
-- ✅ Hash-tabanlı cache
-
-## 🚫 Yapılmayan Hatalar
-
-- ❌ OCR.space kullanmadık (Paralı + API key)
-- ❌ Tesseract kullanmadık (Mangalar için zayıf)
-- ❌ React gereksizliği eklemedik (Vanilla JS)
-- ❌ Popup fixed yapmadık (positioning absolute + tracking)
-- ❌ Bubble auto-detection (V3'te)
-
-## 🏗️ Teknoloji Yığını
-
-| Katman | Teknoloji | Sebep |
-|--------|-----------|-------|
-| **OCR** | PaddleOCR | Ücretsiz, lokal, Japoncayı çok iyi okuyor |
-| **Çeviri** | GoogleTrans | Ücretsiz, API key yok |
-| **Backend** | FastAPI + Python | Hızlı, OpenCV desteği güçlü |
-| **Frontend** | Chrome Extension Manifest V3 | Modern, güvenli |
-| **Preprocessing** | OpenCV | Profesyonel image processing |
-
-## 📁 Proje Yapısı
-
-```
-manga-translator/
-├── extension/                 # Chrome Extension
-│   ├── manifest.json
-│   ├── popup/
-│   │   ├── popup.html
-│   │   ├── popup.css
-│   │   └── popup.js
-│   ├── content/              # Content script
-│   │   ├── content.js
-│   │   └── style.css
-│   └── background/
-│       └── background.js     # Service worker
-│
-├── backend/                   # Python FastAPI
-│   ├── app/
-│   │   ├── main.py
-│   │   ├── api/
-│   │   │   └── routes.py
-│   │   ├── core/
-│   │   │   ├── ocr_engine.py
-│   │   │   ├── image_processor.py
-│   │   │   ├── translator.py
-│   │   │   └── cache_manager.py
-│   │   └── utils/
-│   │       └── logger.py
-│   └── requirements.txt
-│
-├── README.md
-├── ROADMAP.md
-└── ARCHITECTURE.md
+```text
+manga_translator/
+  backend/
+    app/
+      api/routes.py
+      core/cache_manager.py
+      core/image_processor.py
+      core/ocr_engine.py
+      core/settings_manager.py
+      core/translator.py
+      main.py
+    requirements.txt
+  extension/
+    background/background.js
+    content/content.js
+    content/style.css
+    manifest.json
+    popup/popup.html
+    popup/popup.css
+    popup/popup.js
+  start_backend.ps1
+  start_backend.bat
 ```
 
-## 🚀 Kurulum
+## Quick Start
 
-### Backend Kurulumu
+### Backend
 
-```bash
+PowerShell:
+
+```powershell
+.\start_backend.ps1
+```
+
+Command Prompt:
+
+```bat
+start_backend.bat
+```
+
+The scripts create `.venv`, install backend dependencies, and start the server at `http://localhost:8000`.
+
+Manual setup:
+
+```powershell
+py -3.10 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r backend\requirements.txt
 cd backend
-pip install -r requirements.txt
-python app/main.py
+python app\main.py
 ```
 
-Server `http://localhost:8000` adresinde çalışacak.
+### Extension
 
-### Extension Kurulumu
+1. Open `chrome://extensions/`.
+2. Enable Developer mode.
+3. Click Load unpacked.
+4. Select only the `extension/` folder, not the project root.
+5. Make sure the popup Backend URL is `http://localhost:8000`.
 
-1. Chrome'u açın
-2. `chrome://extensions/` adresine gidin
-3. "Geliştirici modu"nu açın (sağ üst)
-4. "Paketlenmemiş uzantıyı yükle" tıklayın
-5. `extension/` klasörünü seçin
+## API
 
-## 📖 Kullanım
+### `GET /health`
 
-1. **Seçim Modunu Başlat**: Extension'ı açın, "Seçim Modunu Başlat" butonuna tıklayın
-2. **Balonu Seç**: Konuşma balonunun üzerine fare ile drag yapın
-3. **Türkçe Oku**: Overlay otomatik yerleşir ve Türkçe metni gösterir
-4. **Scroll Edin**: Overlay scroll ile birlikte hareket eder
+Returns backend health:
 
-## 📋 API Endpoints
-
-### POST `/api/process`
-Manga bubble'ını işle
-
-**Request:**
 ```json
 {
-  "screenshot_data": "base64_image",
-  "coordinates": {"x": 100, "y": 150, "width": 200, "height": 100},
-  "source_lang": "ja",
-  "target_lang": "tr"
+  "status": "ok",
+  "version": "0.5.0"
 }
 ```
 
-**Response:**
+### `POST /api/process`
+
+Request:
+
+```json
+{
+  "screenshot_data": "base64_png",
+  "coordinates": { "x": 100, "y": 150, "width": 200, "height": 100 },
+  "source_lang": "auto",
+  "target_lang": "tr",
+  "zoom_level": 1
+}
+```
+
+Response:
+
 ```json
 {
   "success": true,
   "translation": "Çevrilmiş metin",
   "original_text": "原文",
-  "confidence": 0.95
+  "confidence": 0.92
 }
 ```
 
-### GET `/health`
-Server sağlık kontrolü
+## Current Status
 
-## 🗺️ Roadmap
-
-- **V0.5** (Şu an): Temel işlevsellik
-- **V1**: Cache, scroll tracking, ayarlar
-- **V2**: Hotkeys, history, retry
-- **V3**: Auto bubble detection, AI cleanup
-
-Detaylar için [ROADMAP.md](./ROADMAP.md)
-
-## 🏗️ Mimari
-
-Detaylar için [ARCHITECTURE.md](./ARCHITECTURE.md)
-
-## 📝 Lisans
-
-Burada lisans bilgisi eklenebilir.
-
----
-
-**Nihai Başarı Kriteri**: Kullanıcı bunu kapatınca normal manga okuyamıyor hissi yaşasın. 💪
+This is an MVP, not a packaged production extension yet. The main next tasks are improving OCR quality on varied manga panels, reducing first-run model download friction, adding tests around the backend pipeline, and polishing overlay behavior for long text.

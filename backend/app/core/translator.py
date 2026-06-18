@@ -1,61 +1,48 @@
-# app/core/translator.py - Çeviri Motoru
+# app/core/translator.py - Translation engine
+
+import logging
+import time
 
 from deep_translator import GoogleTranslator
-import logging
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
+
 class Translator:
-    """GoogleTranslator kullanarak çeviri (deep-translator)"""
-    
+    """Translate OCR text with deep-translator's Google backend."""
+
     def __init__(self):
-        logger.info("Translator başlatıldı (deep-translator)")
-    
-    def translate(self, text: str, source_lang: str = 'auto', target_lang: str = 'tr') -> str:
-        """
-        Metni çevir
-        
-        Args:
-            text: Çevrilecek metin
-            source_lang: Kaynak dil (auto, ja, en, etc.)
-            target_lang: Hedef dil (tr)
-        
-        Returns:
-            Çevrilmiş metin
-        """
-        try:
-            if not text or not text.strip():
-                return ""
-            
-            # Dil kodları normalize et
-            if source_lang == 'auto':
-                src = 'auto'
-            elif source_lang == 'ja':
-                src = 'ja'
-            elif source_lang == 'en':
-                src = 'en'
-            else:
-                src = 'auto'
-            
-            # Çeviri yap
-            translator = GoogleTranslator(source_lang=src, target_lang=target_lang)
-            result = translator.translate(text)
-            
-            return result if result else text
-        
-        except Exception as e:
-            logger.error(f"Çeviri hatası: {e}")
-            return text
-    
+        logger.info("Translator initialized")
+
+    @staticmethod
+    def _normalize_source_lang(source_lang: str) -> str:
+        return source_lang if source_lang in {"auto", "ja", "en"} else "auto"
+
+    def translate(self, text: str, source_lang: str = "auto", target_lang: str = "tr") -> str:
+        if not text or not text.strip():
+            return ""
+
+        src = self._normalize_source_lang(source_lang)
+        max_retries = 3
+
+        for attempt in range(1, max_retries + 1):
+            try:
+                result = GoogleTranslator(source=src, target=target_lang).translate(text)
+                if result:
+                    return result
+            except Exception as exc:
+                logger.warning("Translation attempt %s/%s failed: %s", attempt, max_retries, exc)
+                if attempt < max_retries:
+                    time.sleep(1)
+
+        logger.warning("Translation failed after retries; returning original text")
+        return text
+
     def detect_language(self, text: str) -> str:
-        """
-        Metin dilini tespit et
-        """
         try:
-            from deep_translator import detect
-            result = detect(text)
-            return result if result else 'unknown'
-        except Exception as e:
-            logger.error(f"Dil tespit hatası: {e}")
-            return 'unknown'
+            from deep_translator import single_detection
+
+            return single_detection(text, api_key=None) or "unknown"
+        except Exception as exc:
+            logger.warning("Language detection failed: %s", exc)
+            return "unknown"

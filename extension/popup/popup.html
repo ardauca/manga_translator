@@ -9,40 +9,46 @@
 <body>
   <div class="container">
     <h1>Manga Translator</h1>
-    
+
     <div class="control-panel">
       <button id="startSelectionBtn" class="btn btn-primary">
-        <span class="icon">📍</span>
-        Seçim Modunu Başlat
+        <span class="icon">+</span>
+        Seçimi Başlat
       </button>
-      
+
       <button id="stopSelectionBtn" class="btn btn-secondary" disabled>
-        <span class="icon">✕</span>
+        <span class="icon">x</span>
         İptal Et
       </button>
     </div>
 
     <div class="settings-section">
-      <h3>Ayarlar (V1)</h3>
+      <h3>Ayarlar</h3>
+
       <div class="setting-item">
-        <label>Kaynak Dil:</label>
+        <label for="sourceLang">Kaynak Dil</label>
         <select id="sourceLang">
-          <option value="ja">Japonca (JP)</option>
-          <option value="en">İngilizce (EN)</option>
           <option value="auto">Otomatik</option>
+          <option value="ja">Japonca</option>
+          <option value="en">İngilizce</option>
         </select>
       </div>
 
       <div class="setting-item">
-        <label>Yazı Boyutu:</label>
+        <label for="fontSize">Yazı Boyutu</label>
         <input type="range" id="fontSize" min="12" max="24" value="14">
         <span id="fontSizeValue">14px</span>
       </div>
 
       <div class="setting-item">
-        <label>Opaklık:</label>
+        <label for="opacity">Opaklık</label>
         <input type="range" id="opacity" min="0.3" max="1" step="0.1" value="0.95">
         <span id="opacityValue">95%</span>
+      </div>
+
+      <div class="setting-item setting-item-column">
+        <label for="backendUrl">Backend URL</label>
+        <input type="text" id="backendUrl" value="http://localhost:8000">
       </div>
     </div>
 

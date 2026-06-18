@@ -1,90 +1,112 @@
-// background.js - Service Worker (screenshot ve messaging)
+// background.js - Service worker for screenshot capture and backend calls
 
 class BackgroundWorker {
   constructor() {
     this.initMessageHandlers();
-    console.log('[Manga Translator] Background service worker aktif');
+    console.log('[Manga Translator] Background service worker active');
   }
 
   initMessageHandlers() {
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (request.action === 'CAPTURE_AND_PROCESS') {
         this.captureAndProcess(request.coordinates, request.sourceLang, request.zoomLevel, sendResponse);
-        return true; // Async response
+        return true;
       }
     });
   }
 
   async captureAndProcess(coordinates, sourceLang, zoomLevel, sendResponse) {
     try {
-      console.log('[Manga Translator] ===== CAPTURE START =====');
-      console.log('[Manga Translator] Coordinates:', coordinates);
-      console.log('[Manga Translator] Source Lang:', sourceLang);
-      console.log('[Manga Translator] Zoom Level:', zoomLevel);
-      
-      // Tab'ın ekran görüntüsünü al (data URL format)
-      console.log('[Manga Translator] Capturing visible tab...');
+      const backendUrl = await this.findReachableBackend();
       const screenshotDataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'png' });
-      console.log('[Manga Translator] Screenshot captured:', screenshotDataUrl.length, 'chars');
-      
-      // Data URL'den base64'ü çıkar (data:image/png;base64, kısmını kaldır)
       const base64Data = screenshotDataUrl.replace(/^data:image\/png;base64,/, '');
-      console.log('[Manga Translator] Base64 extracted:', base64Data.length, 'chars');
-      
-      const requestPayload = {
-        screenshot_data: base64Data,
-        coordinates: coordinates,
-        source_lang: sourceLang || 'auto',
-        target_lang: 'tr',
-        zoom_level: zoomLevel || 1.0
-      };
-      
-      console.log('[Manga Translator] Sending to backend...');
-      console.log('[Manga Translator] URL: http://localhost:8000/api/process');
-      console.log('[Manga Translator] Payload keys:', Object.keys(requestPayload));
-      
-      // Backend'e gönder
-      const response = await fetch('http://localhost:8000/api/process', {
+
+      const response = await fetch(`${backendUrl}/api/process`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(requestPayload)
+        body: JSON.stringify({
+          screenshot_data: base64Data,
+          coordinates,
+          source_lang: sourceLang || 'auto',
+          target_lang: 'tr',
+          zoom_level: zoomLevel || 1.0
+        })
       });
-
-      console.log('[Manga Translator] Backend response status:', response.status);
-      console.log('[Manga Translator] Backend response headers:', response.headers.get('content-type'));
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('[Manga Translator] Backend error response:', errorText);
-        throw new Error(`Backend hatası: ${response.status} - ${errorText}`);
+        throw new Error(`Backend error ${response.status}: ${errorText}`);
       }
 
       const result = await response.json();
-      console.log('[Manga Translator] Backend result:', result);
-      console.log('[Manga Translator] Translation:', result.translation);
-      console.log('[Manga Translator] ===== CAPTURE SUCCESS =====\n');
-      
       sendResponse({
         success: true,
         translation: result.translation,
+        originalText: result.original_text,
         confidence: result.confidence
       });
-
     } catch (error) {
-      console.error('[Manga Translator] ===== CAPTURE ERROR =====');
-      console.error('[Manga Translator] Error:', error.message);
-      console.error('[Manga Translator] Error stack:', error.stack);
-      console.error('[Manga Translator] ===== END ERROR =====\n');
-      
+      console.error('[Manga Translator] Capture/process failed:', error);
       sendResponse({
         success: false,
-        error: error.message
+        error: this.toUserMessage(error)
       });
     }
   }
+
+  async findReachableBackend() {
+    const settings = await chrome.storage.sync.get('backendUrl');
+    const configuredUrl = this.normalizeBackendUrl(settings.backendUrl || 'http://localhost:8000');
+    const candidates = [
+      configuredUrl,
+      'http://127.0.0.1:8000',
+      'http://localhost:8000'
+    ].filter((url, index, urls) => url && urls.indexOf(url) === index);
+
+    for (const url of candidates) {
+      if (await this.healthCheck(url)) {
+        return url;
+      }
+    }
+
+    throw new Error('BACKEND_UNREACHABLE');
+  }
+
+  normalizeBackendUrl(url) {
+    return String(url || '').trim().replace(/\/$/, '');
+  }
+
+  async healthCheck(url) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 2500);
+
+    try {
+      const response = await fetch(`${url}/health`, {
+        method: 'GET',
+        cache: 'no-store',
+        signal: controller.signal
+      });
+      return response.ok;
+    } catch (error) {
+      return false;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  toUserMessage(error) {
+    if (error.message === 'BACKEND_UNREACHABLE') {
+      return 'Backend çalışmıyor. Önce start_backend.ps1 dosyasını çalıştır ve popup Backend URL değerini kontrol et.';
+    }
+
+    if (error.message === 'Failed to fetch') {
+      return 'Backend bağlantısı başarısız. Backend açık mı ve http://localhost:8000 erişilebilir mi?';
+    }
+
+    return error.message;
+  }
 }
 
-// Initialize
 new BackgroundWorker();

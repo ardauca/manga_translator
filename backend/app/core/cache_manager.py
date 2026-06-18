@@ -6,7 +6,7 @@ from PIL import Image
 import io
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, Dict
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ class CacheManager:
         self.cache: Dict[str, dict] = {}
         self.max_size = max_size
     
-    def generate_key(self, image: Image.Image, coordinates: dict, request_data: dict) -> str:
+    def generate_key(self, image: Image.Image, coordinates: dict, request_data: dict) -> Optional[str]:
         """
         Cache key oluştur
         hash(image_hash + coordinates + url + language)
@@ -34,9 +34,10 @@ class CacheManager:
             # Koordinat ve language
             coords_str = json.dumps(coordinates, sort_keys=True)
             source_lang = request_data.get('source_lang', 'auto')
+            target_lang = request_data.get('target_lang', 'tr')
             
             # Combined hash
-            combined = f"{image_hash}:{coords_str}:{source_lang}"
+            combined = f"{image_hash}:{coords_str}:{source_lang}:{target_lang}"
             cache_key = hashlib.sha256(combined.encode()).hexdigest()
             
             return cache_key
@@ -45,9 +46,12 @@ class CacheManager:
             logger.error(f"Cache key generation error: {e}")
             return None
     
-    def get(self, key: str) -> Optional[str]:
+    def get(self, key: Optional[str]) -> Optional[Any]:
         """Cache'ten al"""
         try:
+            if not key:
+                return None
+
             if key in self.cache:
                 entry = self.cache[key]
                 # TTL kontrol et (24 saat)
@@ -63,9 +67,12 @@ class CacheManager:
             logger.error(f"Cache get error: {e}")
             return None
     
-    def set(self, key: str, value: str) -> bool:
+    def set(self, key: Optional[str], value: Any) -> bool:
         """Cache'e kaydet"""
         try:
+            if not key:
+                return False
+
             if len(self.cache) >= self.max_size:
                 # En eski entry'yi sil
                 oldest_key = min(self.cache.keys(), 

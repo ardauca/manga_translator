@@ -2,15 +2,23 @@
 __pycache__/
 *.py[cod]
 *$py.class
-venv/
-.env
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
-# OCR Models & Data (Bunları GitHub'a yüklemeyeceğiz, script ile indireceğiz)
+# Virtual environments
+.venv/
+venv/
+venv310/
+
+# Environment and local data
+.env
+*.log
+debug_bubble_*.png
+
+# OCR models and generated data
 backend/app/core/models/
 
 # OS
 .DS_Store
 Thumbs.db
-
-# Extension
-*.log

@@ -121,6 +121,20 @@ h1 {
   font-size: 12px;
 }
 
+.setting-item input[type="text"] {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.setting-item-column {
+  align-items: stretch;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .setting-item span {
   font-size: 11px;
   color: var(--secondary);

@@ -1,62 +1,40 @@
-# Manga Translator - Backend
+# Manga Translator Backend
 
-Lokal OCR ve çeviri için Python FastAPI backend.
+FastAPI service for processing selected manga speech bubbles.
 
-## Bağımlılıklar
+## Run
 
-- FastAPI
-- Uvicorn
-- OpenCV (cv2)
-- PaddleOCR
-- googletrans
-- Pillow
-- python-multipart
+From the project root:
 
-## Kurulum
-
-```bash
-pip install -r requirements.txt
+```powershell
+.\start_backend.ps1
 ```
 
-## Çalıştırma
+Manual:
 
-```bash
-python app/main.py
+```powershell
+py -3.10 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r backend\requirements.txt
+cd backend
+python app\main.py
 ```
 
-Server `http://localhost:8000` adresinde çalışacak.
+## Endpoints
 
-## API Endpoints
+- `GET /health`
+- `POST /api/process`
+- `POST /api/process-with-cache` as a backward-compatible alias
+- `GET /api/cache/stats`
+- `DELETE /api/cache`
 
-### POST `/api/process`
+## Pipeline
 
-Manga bubble çevirisi işlemi.
-
-**Request:**
-```json
-{
-  "screenshot_data": "base64_encoded_image",
-  "coordinates": {
-    "x": 100,
-    "y": 150,
-    "width": 200,
-    "height": 100
-  },
-  "source_lang": "ja",
-  "target_lang": "tr"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "translation": "Çevrilmiş metin",
-  "confidence": 0.95,
-  "original_text": "原文"
-}
-```
-
-### GET `/health`
-
-Server sağlık kontrolü.
+1. Decode base64 screenshot.
+2. Normalize selected coordinates with browser zoom/device pixel ratio.
+3. Crop the selected area.
+4. Check in-memory cache.
+5. Preprocess image with OpenCV.
+6. Extract text with PaddleOCR.
+7. Translate with `deep-translator`.
+8. Cache and return the result.

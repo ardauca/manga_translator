@@ -1,19 +1,23 @@
 # Backend startup script for PowerShell
-# Activates venv310 and starts the server
+
+$ErrorActionPreference = "Stop"
 
 Write-Host "======================================" -ForegroundColor Cyan
 Write-Host "Manga Translator Backend" -ForegroundColor Cyan
 Write-Host "======================================" -ForegroundColor Cyan
 
-# Activate venv310
-Write-Host "`n[*] Activating venv310..." -ForegroundColor Yellow
-& .\venv310\Scripts\Activate.ps1
+if (-not (Test-Path ".\.venv\Scripts\Activate.ps1")) {
+    Write-Host "`n[*] Creating .venv with Python 3.10..." -ForegroundColor Yellow
+    py -3.10 -m venv .venv
+}
 
-# Verify Python environment
-Write-Host "`n[*] Verifying Python environment..." -ForegroundColor Yellow
-python -c "import sys; print('Python:', sys.executable); print('Version:', sys.version.split()[0])"
+Write-Host "`n[*] Activating .venv..." -ForegroundColor Yellow
+& .\.venv\Scripts\Activate.ps1
 
-# Start backend
+Write-Host "`n[*] Installing backend dependencies..." -ForegroundColor Yellow
+python -m pip install --upgrade pip
+python -m pip install -r backend\requirements.txt
+
 Write-Host "`n[*] Starting backend server..." -ForegroundColor Yellow
-cd backend
-python app/main.py
+Set-Location backend
+python app\main.py
