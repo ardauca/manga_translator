@@ -2,51 +2,55 @@
 
 ## Model
 
-Proje local companion backend modeliyle çalışır. Chrome extension kullanıcı etkileşimini yönetir; ağır OCR ve çeviri işi lokal FastAPI backend'e gider.
+Manga Translator uses a local companion backend model.
 
 ```text
+Chrome popup
+  -> backend health, settings, selection controls
 Content script
-  -> kullanıcı balonu seçer
+  -> user selects a speech bubble
 Background service worker
-  -> visible tab screenshot alır
+  -> checks backend, captures visible tab, sends request
 FastAPI backend
-  -> crop, preprocess, OCR, translate, cache
+  -> crop, preprocess, OCR, clean text, translate, cache
 Content script
-  -> çeviri overlay'i basar
+  -> renders overlay with close / retry / copy controls
 ```
 
 ## Extension
 
-- `popup/`: seçim başlatma, ayarlar ve backend URL girişi
-- `content/content.js`: seçim kutusu, hata bildirimi ve çeviri overlay'i
-- `background/background.js`: screenshot alma, backend health check, `/api/process` çağrısı
-- `manifest.json`: Chrome Manifest V3 tanımı
+- `popup/`: backend status, settings and action controls
+- `content/content.js`: selection box, page notices and translation overlays
+- `background/background.js`: backend discovery, health checks, screenshot capture and API calls
+- `manifest.json`: Chrome Manifest V3 definition
 
-Önemli not: Extension yalnızca `extension/` klasöründen yüklenmelidir. Proje kökü yüklenirse `.venv` gibi klasörler de Chrome tarafından paket parçası gibi taranır.
+The extension must be loaded from `extension/`, not from the project root.
 
 ## Backend
 
-- `main.py`: FastAPI uygulaması ve CORS
-- `api/routes.py`: request doğrulama, screenshot decode, crop, cache, OCR, translate
-- `core/image_processor.py`: OpenCV preprocessing
-- `core/ocr_engine.py`: PaddleOCR model yönetimi ve sonuç parse etme
-- `core/translator.py`: `deep-translator` entegrasyonu
-- `core/cache_manager.py`: TTL destekli bellek içi cache
-- `core/settings_manager.py`: environment tabanlı ayarlar
+- `main.py`: FastAPI app and CORS
+- `api/routes.py`: request validation, screenshot decode, crop, cache, OCR and translation orchestration
+- `core/image_processor.py`: OpenCV preprocessing modes
+- `core/ocr_engine.py`: PaddleOCR model loading and result parsing
+- `core/text_cleaner.py`: OCR text cleanup before translation
+- `core/translator.py`: `deep-translator` wrapper
+- `core/cache_manager.py`: in-memory TTL cache
+- `core/settings_manager.py`: environment-backed settings
 
-## Veri Akışı
+## Request Flow
 
-1. Content script viewport koordinatlarını background worker'a yollar.
-2. Background worker backend `/health` kontrolü yapar.
-3. Backend uygunsa visible tab screenshot alınır.
-4. Screenshot ve koordinatlar `/api/process` endpoint'ine gider.
-5. Backend koordinatları zoom seviyesine göre ölçekler ve screenshot sınırlarına kırpar.
-6. Cache hit varsa direkt sonuç döner.
-7. Cache miss varsa OpenCV preprocessing, PaddleOCR ve çeviri çalışır.
-8. Sonuç cache'e yazılır ve extension overlay gösterir.
+1. Popup checks `/health` and `/api/status`.
+2. Content script sends selected viewport coordinates to the background worker.
+3. Background worker checks backend availability.
+4. Background worker captures the visible tab.
+5. Backend scales coordinates by device pixel ratio and clamps the crop to image bounds.
+6. Backend checks cache using image, coordinates, languages and preprocessing mode.
+7. If no cache hit, backend preprocesses, OCRs, cleans and translates the text.
+8. Content script creates an overlay with translation, confidence, timing and controls.
 
-## Tradeofflar
+## Tradeoffs
 
-- Lokal backend gizlilik ve maliyet açısından iyi, kurulum açısından ek adım gerektirir.
-- Hosted backend kullanıcı deneyimini kolaylaştırır ama sunucu maliyeti ve gizlilik sorumluluğu doğurur.
-- Tarayıcı içinde OCR şu an bu proje için pratik değildir; model boyutu ve performans sorunları yüksek olur.
+- Local backend keeps image processing local and avoids server cost.
+- Local backend requires an extra running process.
+- Free translation is convenient but not guaranteed at scale.
+- Browser-only OCR is currently avoided because model size and performance are poor for this use case.

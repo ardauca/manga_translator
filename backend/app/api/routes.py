@@ -3,6 +3,7 @@
 import base64
 import io
 import logging
+import time
 import traceback
 
 from fastapi import APIRouter, HTTPException
@@ -13,6 +14,7 @@ from core.cache_manager import CacheManager
 from core.image_processor import ImageProcessor
 from core.ocr_engine import OCREngine
 from core.settings_manager import settings
+from core.text_cleaner import TextCleaner
 from core.translator import Translator
 
 logger = logging.getLogger(__name__)
@@ -33,6 +35,7 @@ class ProcessRequest(BaseModel):
     source_lang: str = "auto"
     target_lang: str = "tr"
     zoom_level: float = 1.0
+    preprocessing_mode: str = "auto"
 
     class Config:
         extra = "ignore"
@@ -43,11 +46,16 @@ class ProcessResponse(BaseModel):
     translation: str
     original_text: str
     confidence: float
+    cleaned_text: str = ""
+    cached: bool = False
+    preprocessing_mode: str = "auto"
+    processing_ms: int = 0
 
 
 ocr_engine = OCREngine()
 translator = Translator()
 image_processor = ImageProcessor()
+text_cleaner = TextCleaner()
 cache_manager = CacheManager(max_size=settings.CACHE_MAX_SIZE, ttl_hours=settings.CACHE_TTL_HOURS)
 
 
@@ -103,6 +111,8 @@ def _crop_image(image: Image.Image, coords: dict) -> Image.Image:
 
 @router.post("/process", response_model=ProcessResponse)
 async def process_manga(request: ProcessRequest):
+    started_at = time.perf_counter()
+
     try:
         screenshot_image = _decode_screenshot(request.screenshot_data)
         adjusted_coords = _adjust_coordinates(request.coordinates, request.zoom_level, screenshot_image)
@@ -111,36 +121,49 @@ async def process_manga(request: ProcessRequest):
         cache_key = cache_manager.generate_key(cropped_image, adjusted_coords, {
             "source_lang": request.source_lang,
             "target_lang": request.target_lang,
+            "preprocessing_mode": request.preprocessing_mode,
         })
         cached = cache_manager.get(cache_key) if cache_key else None
         if cached:
-            logger.info("Cache hit for manga selection")
             return ProcessResponse(
                 success=True,
                 translation=cached["translation"],
                 original_text=cached.get("original_text", "[cached]"),
                 confidence=float(cached.get("confidence", 1.0)),
+                cleaned_text=cached.get("cleaned_text", ""),
+                cached=True,
+                preprocessing_mode=request.preprocessing_mode,
+                processing_ms=_elapsed_ms(started_at),
             )
 
-        processed_image = image_processor.preprocess(cropped_image, upscale_factor=settings.UPSCALE_FACTOR)
+        processed_image = image_processor.preprocess(
+            cropped_image,
+            upscale_factor=settings.UPSCALE_FACTOR,
+            mode=request.preprocessing_mode,
+        )
         ocr_result = ocr_engine.extract_with_confidence(processed_image, request.source_lang)
         original_text = ocr_result.get("text", "")
         confidence = float(ocr_result.get("confidence") or 0.0)
+        cleaned_text = text_cleaner.clean(original_text, request.source_lang)
 
-        if not original_text.strip():
+        if not cleaned_text.strip():
             return ProcessResponse(
                 success=True,
-                translation="(Metin bulunamadı)",
+                translation="(No text found)",
                 original_text="",
                 confidence=0.0,
+                cleaned_text="",
+                preprocessing_mode=request.preprocessing_mode,
+                processing_ms=_elapsed_ms(started_at),
             )
 
-        translated_text = translator.translate(original_text, request.source_lang, request.target_lang)
+        translated_text = translator.translate(cleaned_text, request.source_lang, request.target_lang)
 
         if cache_key:
             cache_manager.set(cache_key, {
                 "translation": translated_text,
                 "original_text": original_text,
+                "cleaned_text": cleaned_text,
                 "confidence": confidence,
             })
 
@@ -149,6 +172,9 @@ async def process_manga(request: ProcessRequest):
             translation=translated_text,
             original_text=original_text,
             confidence=confidence,
+            cleaned_text=cleaned_text,
+            preprocessing_mode=request.preprocessing_mode,
+            processing_ms=_elapsed_ms(started_at),
         )
 
     except HTTPException:
@@ -159,10 +185,29 @@ async def process_manga(request: ProcessRequest):
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
+def _elapsed_ms(started_at: float) -> int:
+    return int((time.perf_counter() - started_at) * 1000)
+
+
 @router.post("/process-with-cache", response_model=ProcessResponse)
 async def process_with_cache(request: ProcessRequest):
     """Backward-compatible alias for clients that used the old cache endpoint."""
     return await process_manga(request)
+
+
+@router.get("/status")
+async def status():
+    return {
+        "success": True,
+        "app": settings.APP_NAME,
+        "ocr_engine": settings.OCR_ENGINE,
+        "translator_engine": settings.TRANSLATOR_ENGINE,
+        "cache": cache_manager.get_stats(),
+        "models": {
+            "ja_loaded": ocr_engine.ocr_ja is not None,
+            "en_loaded": ocr_engine.ocr_en is not None,
+        },
+    }
 
 
 @router.get("/cache/stats")

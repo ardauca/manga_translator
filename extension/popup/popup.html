@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,55 +7,93 @@
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <div class="container">
-    <h1>Manga Translator</h1>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <h1>Manga Translator</h1>
+        <p>Clean manga reading, translated in place.</p>
+      </div>
+      <span id="backendBadge" class="status-dot status-muted" title="Backend status"></span>
+    </header>
 
-    <div class="control-panel">
-      <button id="startSelectionBtn" class="btn btn-primary">
-        <span class="icon">+</span>
-        Seçimi Başlat
-      </button>
+    <section class="hero-control">
+      <button id="toggleSelectionBtn" class="primary-button">Start Reading</button>
+      <label class="switch-row">
+        <span>Show translations</span>
+        <input id="translationsVisible" type="checkbox" checked>
+        <span class="switch"></span>
+      </label>
+    </section>
 
-      <button id="stopSelectionBtn" class="btn btn-secondary" disabled>
-        <span class="icon">x</span>
-        İptal Et
-      </button>
-    </div>
+    <section class="card">
+      <div class="card-heading">
+        <h2>Bubble Settings</h2>
+      </div>
 
-    <div class="settings-section">
-      <h3>Ayarlar</h3>
+      <div class="setting-line">
+        <label for="maxOverlays">Bubble limit</label>
+        <input type="range" id="maxOverlays" min="1" max="20" value="8">
+        <span id="maxOverlaysValue" class="value-badge">8</span>
+      </div>
 
-      <div class="setting-item">
-        <label for="sourceLang">Kaynak Dil</label>
-        <select id="sourceLang">
-          <option value="auto">Otomatik</option>
-          <option value="ja">Japonca</option>
-          <option value="en">İngilizce</option>
+      <div class="setting-line">
+        <label for="overlayTtl">Auto-hide</label>
+        <select id="overlayTtl">
+          <option value="0">Never</option>
+          <option value="10">10 sec</option>
+          <option value="30">30 sec</option>
+          <option value="60">1 min</option>
+          <option value="180">3 min</option>
         </select>
+        <span id="overlayTtlValue" class="value-badge">Never</span>
       </div>
 
-      <div class="setting-item">
-        <label for="fontSize">Yazı Boyutu</label>
+      <div class="setting-line">
+        <label for="fontSize">Text size</label>
         <input type="range" id="fontSize" min="12" max="24" value="14">
-        <span id="fontSizeValue">14px</span>
+        <span id="fontSizeValue" class="value-badge">14px</span>
       </div>
 
-      <div class="setting-item">
-        <label for="opacity">Opaklık</label>
-        <input type="range" id="opacity" min="0.3" max="1" step="0.1" value="0.95">
-        <span id="opacityValue">95%</span>
+      <div class="setting-line">
+        <label for="opacity">Background</label>
+        <input type="range" id="opacity" min="0.45" max="1" step="0.05" value="0.95">
+        <span id="opacityValue" class="value-badge">95%</span>
       </div>
+    </section>
 
-      <div class="setting-item setting-item-column">
-        <label for="backendUrl">Backend URL</label>
-        <input type="text" id="backendUrl" value="http://localhost:8000">
+    <section class="recent-section">
+      <div class="section-heading">
+        <h2>Recent Translations</h2>
+        <button id="clearHistoryBtn" class="text-button">Clear</button>
       </div>
-    </div>
+      <div id="historyList" class="history-list">
+        <p class="empty-state">Translations will appear here after you select a bubble.</p>
+      </div>
+    </section>
 
-    <div class="status">
-      <p id="statusText">Hazır</p>
-    </div>
-  </div>
+    <details class="advanced">
+      <summary>Advanced <span>&gt;</span></summary>
+      <div class="advanced-body">
+        <label>
+          Source language
+          <select id="sourceLang">
+            <option value="auto">Auto</option>
+            <option value="ja">Japanese</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+        <label>
+          Backend URL
+          <input type="text" id="backendUrl" value="http://localhost:8000">
+        </label>
+      </div>
+    </details>
+
+    <footer class="footer-status">
+      <span class="ready-dot"></span>
+      <span id="statusText">Ready to translate</span>
+    </footer>
+  </main>
 
   <script src="popup.js"></script>
 </body>

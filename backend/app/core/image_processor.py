@@ -13,8 +13,12 @@ class ImageProcessor:
     """Improve selected image regions before OCR."""
 
     @staticmethod
-    def preprocess(image: Image.Image, upscale_factor: int = 2) -> Image.Image:
+    def preprocess(image: Image.Image, upscale_factor: int = 2, mode: str = "auto") -> Image.Image:
         try:
+            mode = (mode or "auto").lower()
+            if mode == "raw":
+                return image.convert("RGB")
+
             cv_image = cv2.cvtColor(np.array(image.convert("RGB")), cv2.COLOR_RGB2BGR)
             height, width = cv_image.shape[:2]
             resized = cv2.resize(
@@ -24,15 +28,38 @@ class ImageProcessor:
             )
 
             gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+
+            if mode == "light":
+                result = Image.fromarray(cv2.cvtColor(gray, cv2.COLOR_GRAY2RGB))
+                logger.debug("Image preprocessed with light mode: %s -> %s", image.size, result.size)
+                return result
+
+            if mode == "invert":
+                inverted = cv2.bitwise_not(gray)
+                result = Image.fromarray(cv2.cvtColor(inverted, cv2.COLOR_GRAY2RGB))
+                logger.debug("Image preprocessed with invert mode: %s -> %s", image.size, result.size)
+                return result
+
             filtered = cv2.bilateralFilter(gray, 9, 75, 75)
             clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
             enhanced = clahe.apply(filtered)
-            _, thresholded = cv2.threshold(enhanced, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+            if mode == "strong":
+                thresholded = cv2.adaptiveThreshold(
+                    enhanced,
+                    255,
+                    cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                    cv2.THRESH_BINARY,
+                    31,
+                    11,
+                )
+            else:
+                _, thresholded = cv2.threshold(enhanced, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
             kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (1, 1))
             processed = cv2.morphologyEx(thresholded, cv2.MORPH_OPEN, kernel)
             result = Image.fromarray(cv2.cvtColor(processed, cv2.COLOR_GRAY2RGB))
 
-            logger.debug("Image preprocessed: %s -> %s", image.size, result.size)
+            logger.debug("Image preprocessed with %s mode: %s -> %s", mode, image.size, result.size)
             return result
         except Exception:
             logger.exception("Image preprocessing failed; using original image")

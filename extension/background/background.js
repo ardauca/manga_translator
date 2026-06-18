@@ -1,21 +1,26 @@
-// background.js - Service worker for screenshot capture and backend calls
+// background.js - Service worker for backend communication and screenshot capture
 
 class BackgroundWorker {
   constructor() {
     this.initMessageHandlers();
-    console.log('[Manga Translator] Background service worker active');
   }
 
   initMessageHandlers() {
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (request.action === 'CAPTURE_AND_PROCESS') {
-        this.captureAndProcess(request.coordinates, request.sourceLang, request.zoomLevel, sendResponse);
+        this.captureAndProcess(request, sendResponse);
         return true;
       }
+
+      if (request.action === 'CHECK_BACKEND') {
+        this.checkBackend(sendResponse);
+        return true;
+      }
+
     });
   }
 
-  async captureAndProcess(coordinates, sourceLang, zoomLevel, sendResponse) {
+  async captureAndProcess(request, sendResponse) {
     try {
       const backendUrl = await this.findReachableBackend();
       const screenshotDataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'png' });
@@ -28,10 +33,11 @@ class BackgroundWorker {
         },
         body: JSON.stringify({
           screenshot_data: base64Data,
-          coordinates,
-          source_lang: sourceLang || 'auto',
-          target_lang: 'tr',
-          zoom_level: zoomLevel || 1.0
+          coordinates: request.coordinates,
+          source_lang: request.sourceLang || 'auto',
+          target_lang: request.targetLang || 'tr',
+          zoom_level: request.zoomLevel || 1.0,
+          preprocessing_mode: request.preprocessingMode || 'auto'
         })
       });
 
@@ -43,12 +49,30 @@ class BackgroundWorker {
       const result = await response.json();
       sendResponse({
         success: true,
+        backendUrl,
         translation: result.translation,
         originalText: result.original_text,
+        cleanedText: result.cleaned_text,
         confidence: result.confidence
       });
     } catch (error) {
-      console.error('[Manga Translator] Capture/process failed:', error);
+      sendResponse({
+        success: false,
+        error: this.toUserMessage(error)
+      });
+    }
+  }
+
+  async checkBackend(sendResponse) {
+    try {
+      const backendUrl = await this.findReachableBackend();
+      const status = await this.fetchJson(`${backendUrl}/api/status`);
+      sendResponse({
+        success: true,
+        backendUrl,
+        status
+      });
+    } catch (error) {
       sendResponse({
         success: false,
         error: this.toUserMessage(error)
@@ -79,18 +103,27 @@ class BackgroundWorker {
   }
 
   async healthCheck(url) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 2500);
-
     try {
-      const response = await fetch(`${url}/health`, {
-        method: 'GET',
-        cache: 'no-store',
-        signal: controller.signal
-      });
+      const response = await this.fetchWithTimeout(`${url}/health`, { cache: 'no-store' }, 2500);
       return response.ok;
     } catch (error) {
       return false;
+    }
+  }
+
+  async fetchJson(url) {
+    const response = await this.fetchWithTimeout(url, { cache: 'no-store' }, 2500);
+    if (!response.ok) {
+      throw new Error(`Backend error ${response.status}`);
+    }
+    return response.json();
+  }
+
+  async fetchWithTimeout(url, options, timeoutMs) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(url, { ...options, signal: controller.signal });
     } finally {
       clearTimeout(timer);
     }
@@ -98,11 +131,11 @@ class BackgroundWorker {
 
   toUserMessage(error) {
     if (error.message === 'BACKEND_UNREACHABLE') {
-      return 'Backend çalışmıyor. Önce start_backend.ps1 dosyasını çalıştır ve popup Backend URL değerini kontrol et.';
+      return 'Backend is not running. Start it with start_backend.ps1 and check the Backend URL.';
     }
 
     if (error.message === 'Failed to fetch') {
-      return 'Backend bağlantısı başarısız. Backend açık mı ve http://localhost:8000 erişilebilir mi?';
+      return 'Backend connection failed. Check http://localhost:8000.';
     }
 
     return error.message;

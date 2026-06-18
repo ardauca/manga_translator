@@ -1,47 +1,52 @@
 # Roadmap
 
-## V0.5 - Çalışan MVP
+## V0.5 - Working MVP
 
 - [x] Chrome Manifest V3 extension
-- [x] Manuel balon seçimi
-- [x] Görünür sekmeden screenshot alma
-- [x] Backend crop ve koordinat doğrulama
+- [x] Manual speech bubble selection
+- [x] Visible tab screenshot capture
+- [x] Backend crop and coordinate validation
 - [x] OpenCV preprocessing
 - [x] PaddleOCR lazy loading
-- [x] Japonca/İngilizce kaynak dil seçimi
-- [x] Türkçe çeviri
-- [x] Sayfa üstü overlay
-- [x] Bellek içi cache
-- [x] Backend bağlantı kontrolü ve fallback URL
-- [x] Temiz repo yapısı ve `.gitignore`
+- [x] Japanese / English source language selection
+- [x] Turkish translation
+- [x] Page overlays
+- [x] In-memory cache
+- [x] Backend connection fallback URL
+- [x] Clean repo structure and `.gitignore`
 
-## V0.6 - Paylaşılabilir Beta
+## V0.6 - Better Reading Experience
 
-- [ ] Backend health durumunu popup'ta göster
-- [ ] PyInstaller/Nuitka ile Windows backend paketi hazırla
-- [ ] Extension + backend beta zip yapısı oluştur
-- [ ] Basit backend smoke testleri ekle
-- [ ] OCR debug görseli alma opsiyonunu ayara bağla
+- [x] Popup backend health indicator
+- [x] Popup cache status
+- [x] Clear backend cache control
+- [x] Multiple overlays
+- [x] Overlay close, retry and copy controls
+- [x] Optional OCR text under translation
+- [x] OCR preprocessing modes
+- [x] OCR text cleanup layer
+- [x] Lightweight unit tests
 
-## V1 - Kullanılabilirlik
+## V0.7 - Shareable Beta
 
-- [ ] Birden fazla overlay'i aynı sayfada tutma
-- [ ] Overlay silme ve yeniden deneme kontrolleri
-- [ ] Çeviri geçmişi
-- [ ] Panoya kopyalama
-- [ ] Uzun metinlerde daha iyi yazı sığdırma
+- [ ] Package backend with PyInstaller or Nuitka
+- [ ] Create extension + backend beta zip
+- [ ] Add one-click backend launcher
+- [ ] Add simple tray/status app for backend
+- [ ] Add a smoke test script for release builds
 
-## V2 - Kalite ve Performans
+## V1 - Quality
 
-- [ ] OCR sample seti ile preprocessing kıyaslama
-- [ ] Kalıcı cache
-- [ ] İşlem süresi metrikleri
-- [ ] GPU kullanım rehberi
-- [ ] Alternatif çeviri sağlayıcısı fallback'i
+- [ ] Sample manga OCR benchmark set
+- [ ] Automatic preprocessing retry when confidence is low
+- [ ] Better text fitting for long translations
+- [ ] Translation history
+- [ ] Clipboard/history panel in popup
 
-## V3 - Otomasyon
+## V2 - Automation
 
-- [ ] Otomatik balon algılama
-- [ ] Batch çeviri
-- [ ] Daha iyi typesetting
-- [ ] Offline çeviri modeli araştırması
+- [ ] Automatic speech bubble detection
+- [ ] Batch translation
+- [ ] Persistent cache
+- [ ] Optional GPU setup guide
+- [ ] LibreTranslate or offline translation fallback

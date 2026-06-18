@@ -1,35 +1,49 @@
 # Manga Translator
 
-Manga balonlarını Chrome üzerinde seçip Türkçeye çeviren lokal OCR destekli eklenti.
+Local-first Chrome extension for translating selected manga speech bubbles into Turkish.
 
-Proje iki parçadan oluşur:
+The project has two parts:
 
-- Chrome extension: balon seçimi, ekran görüntüsü alma, overlay gösterimi
-- Python backend: crop, OpenCV preprocessing, PaddleOCR, çeviri ve cache
+- Chrome extension: selection UI, screenshot capture, page overlays
+- Python backend: crop, image preprocessing, PaddleOCR, translation and cache
 
-## Yetenekler
+## Features
 
-- Mouse ile manuel konuşma balonu seçimi
-- Chrome Manifest V3 eklentisi
-- Görünür sekmeden screenshot alma
-- Seçilen alanı backend tarafında kırpma
-- OpenCV ile OCR öncesi görüntü iyileştirme
-- PaddleOCR ile lokal Japonca/İngilizce OCR
-- `deep-translator` ile Türkçeye çeviri
-- Aynı seçimler için bellek içi cache
-- Sayfa üzerinde çeviri overlay'i
-- Popup üzerinden kaynak dil, yazı boyutu, opaklık ve backend URL ayarı
-- Backend bağlantısı yoksa anlaşılır hata mesajı
+- Manual speech bubble selection with mouse drag
+- Chrome Manifest V3 extension
+- Visible tab screenshot capture
+- Backend-side crop and coordinate validation
+- OpenCV preprocessing for OCR
+- Local PaddleOCR for Japanese and English OCR
+- `deep-translator` translation to Turkish
+- In-memory cache for repeated selections
+- Multiple page overlays
+- Overlay close, retry and copy controls
+- Optional OCR text under the translation
+- Popup settings for source language, OCR mode, font size, opacity and backend URL
+- Popup backend health/cache status
+- Clear backend cache and clear page overlays controls
 
-## Sınırlar
+## Free / Local-First Model
 
-- Backend lokal çalışmalıdır; eklenti tek başına OCR yapmaz.
-- İlk OCR denemesi yavaş olabilir çünkü PaddleOCR model indirip başlatır.
-- Cache bellek içindedir; backend kapanınca sıfırlanır.
-- Otomatik balon algılama henüz yoktur.
-- Uzantı olarak proje kökü değil, yalnızca `extension/` klasörü yüklenmelidir.
+The current project does not require a paid API key.
 
-## Proje Yapısı
+- OCR runs locally with PaddleOCR.
+- The backend runs on the user's machine.
+- There is no hosted server cost.
+- Translation uses `deep-translator` with a free web-backed Google flow.
+
+Important: the translation provider is free but not guaranteed for heavy or commercial-scale use. It may rate-limit or change behavior. A future version can add LibreTranslate or offline translation fallback.
+
+## Limits
+
+- The extension needs the local backend; it does not run OCR by itself.
+- First OCR use can be slow because PaddleOCR downloads and initializes models.
+- Cache is in memory and resets when the backend stops.
+- Automatic bubble detection is not implemented yet.
+- Load only the `extension/` folder in Chrome, not the project root.
+
+## Project Structure
 
 ```text
 manga_translator/
@@ -40,9 +54,11 @@ manga_translator/
       core/image_processor.py
       core/ocr_engine.py
       core/settings_manager.py
+      core/text_cleaner.py
       core/translator.py
       main.py
     requirements.txt
+    tests/
   extension/
     background/background.js
     content/content.js
@@ -55,36 +71,57 @@ manga_translator/
   start_backend.bat
 ```
 
-## Kurulum
+## Setup
 
-Backend'i başlat:
+Start the backend:
 
 ```powershell
 .\start_backend.ps1
 ```
 
-Script `.venv` oluşturur, bağımlılıkları kurar ve backend'i `http://localhost:8000` adresinde başlatır.
+The script creates `.venv`, installs dependencies and starts the backend at `http://localhost:8000`.
 
-Backend sağlık kontrolü:
+Health check:
 
 ```powershell
 Invoke-RestMethod http://localhost:8000/health
 ```
 
-Chrome eklentisini yükle:
+Load the Chrome extension:
 
-1. `chrome://extensions/` sayfasını aç.
-2. Developer mode'u aç.
-3. Load unpacked seç.
-4. Sadece `C:\Users\ARDA\Desktop\Python\manga_translator\extension` klasörünü seç.
-5. Manga sayfasını yenile.
+1. Open `chrome://extensions/`.
+2. Enable Developer mode.
+3. Click Load unpacked.
+4. Select only the `extension/` folder.
+5. Refresh the manga page.
 
-## Kullanım
+## Usage
 
-1. Backend terminalini açık bırak.
-2. Eklenti popup'ından seçimi başlat.
-3. Manga balonunu mouse ile seç.
-4. Çeviri sayfa üzerinde overlay olarak görünür.
+1. Keep the backend terminal open.
+2. Open the extension popup.
+3. Check that Backend is Online.
+4. Click Start Select.
+5. Drag over a manga speech bubble.
+6. Use overlay buttons:
+   - `x`: close
+   - `r`: retry OCR/translation
+   - `c`: copy translation
+
+## OCR Modes
+
+- `auto`: default balanced preprocessing
+- `light`: grayscale only
+- `strong`: aggressive adaptive threshold
+- `invert`: inverted grayscale for unusual panels
+- `raw`: no preprocessing
+
+## Tests
+
+Run lightweight tests without loading OCR models:
+
+```powershell
+py -3.10 -m unittest discover backend\tests
+```
 
 ## API
 
@@ -93,9 +130,14 @@ Chrome eklentisini yükle:
 ```json
 {
   "status": "ok",
-  "version": "0.5.0"
+  "version": "0.5.0",
+  "app": "Manga Translator"
 }
 ```
+
+### `GET /api/status`
+
+Returns backend, cache and OCR model status.
 
 ### `POST /api/process`
 
@@ -105,19 +147,24 @@ Chrome eklentisini yükle:
   "coordinates": { "x": 100, "y": 150, "width": 200, "height": 100 },
   "source_lang": "auto",
   "target_lang": "tr",
-  "zoom_level": 1
+  "zoom_level": 1,
+  "preprocessing_mode": "auto"
 }
 ```
 
 ```json
 {
   "success": true,
-  "translation": "Çevrilmiş metin",
-  "original_text": "原文",
-  "confidence": 0.92
+  "translation": "Translated text",
+  "original_text": "OCR raw text",
+  "cleaned_text": "OCR cleaned text",
+  "confidence": 0.92,
+  "cached": false,
+  "preprocessing_mode": "auto",
+  "processing_ms": 840
 }
 ```
 
-## Paylaşım Notu
+## Sharing Plan
 
-Bu proje şu an "local companion backend" modelindedir. Başka bir kullanıcıya vermek için extension yanında backend'i de çalıştırabilecekleri bir paket gerekir. Bir sonraki ürünleşme adımı backend'i tek tıkla çalışan Windows uygulamasına paketlemektir.
+This is currently a local companion backend project. To share it with non-technical users, package the backend as a one-click Windows app and ship it with the extension folder.

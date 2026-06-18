@@ -23,8 +23,9 @@ python app\main.py
 ## Endpoints
 
 - `GET /health`
+- `GET /api/status`
 - `POST /api/process`
-- `POST /api/process-with-cache` as a backward-compatible alias
+- `POST /api/process-with-cache`
 - `GET /api/cache/stats`
 - `DELETE /api/cache`
 
@@ -34,7 +35,14 @@ python app\main.py
 2. Normalize selected coordinates with browser zoom/device pixel ratio.
 3. Crop the selected area.
 4. Check in-memory cache.
-5. Preprocess image with OpenCV.
+5. Preprocess image with selected OCR mode.
 6. Extract text with PaddleOCR.
-7. Translate with `deep-translator`.
-8. Cache and return the result.
+7. Clean OCR text.
+8. Translate with `deep-translator`.
+9. Cache and return translation, OCR confidence and processing time.
+
+## Tests
+
+```powershell
+py -3.10 -m unittest discover backend\tests
+```

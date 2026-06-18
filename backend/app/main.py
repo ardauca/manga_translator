@@ -36,6 +36,7 @@ async def health_check():
     return {
         "status": "ok",
         "version": "0.5.0",
+        "app": settings.APP_NAME,
     }
 
 
